@@ -1,3 +1,5 @@
+# License
+
 This file list the copyright holders and licenses of the files included in 
 this package.
 
@@ -17,8 +19,7 @@ Catalog citation.
 
 ## Rest of the package
 
-The rest of the package files including source codes, documentation, etc. is 
+The rest of the package files including source codes, documentation, etc. are 
 authored by Franck Picard and Ghislain Durif (from LBMC, ENS de Lyon, CNRS 
 UMR 5239, Inserm U1293, Université Claude Bernard Lyon 1, 69007, Lyon, France)
 and available under the GPL (>= 3) license.
-
