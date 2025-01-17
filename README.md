@@ -19,10 +19,21 @@ See Picard et al (2024) for more details about the method.
 
 This package is developed by:
 
+This package is developed by:
+
 - Franck Picard
   ([link](https://franckpicard.github.io/)\|[ORCID](https://orcid.org/0000-0001-8084-5481))
 - Ghislain Durif
   ([link](https://gdurif.perso.math.cnrs.fr/)\|[ORCID](https://orcid.org/0000-0003-2567-1401))
+
+with contributions from:
+
+- Vincent Rivoirard
+  ([link](https://www.ceremade.dauphine.fr/~rivoirar/)\|[ORCID](https://orcid.org/0000-0001-6461-806X))
+- Angelina Roche
+  ([link](https://www.ceremade.dauphine.fr/~roche/)\|[ORCID](https://orcid.org/0000-0001-8490-4995))
+- Victor Panaretos
+  ([link](https://people.epfl.ch/victor.panaretos)\|[ORCID](https://orcid.org/0000-0002-2442-9907))
 
 The `{pppca}` package is available under the GPL\>=3 license (except for
 the included `earthquake` dataset, see `?earthquake` or the
