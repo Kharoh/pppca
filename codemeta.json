@@ -1,0 +1,83 @@
+{
+    "@context": "https://doi.org/10.5063/schema/codemeta-2.0",
+    "type": "SoftwareSourceCode",
+    "applicationCategory": "Statistics",
+    "author": [
+        {
+            "id": "https://orcid.org/0000-0003-2567-1401",
+            "type": "Person",
+            "affiliation": {
+                "type": "Organization",
+                "name": "Laboratory of Biology and Modelling of the Cell, Université de Lyon, Ecole Normale Supérieure de Lyon, CNRS, UMR5239, Université Claude Bernard Lyon 1, F-69007 Lyon, France"
+            },
+            "email": "ghislain.durif@ens-lyon.fr",
+            "familyName": "Durif",
+            "givenName": "Ghislain"
+        },
+        {
+            "id": "https://orcid.org/0000-0001-8084-5481",
+            "type": "Person",
+            "affiliation": {
+                "type": "Organization",
+                "name": "Laboratory of Biology and Modelling of the Cell, Université de Lyon, Ecole Normale Supérieure de Lyon, CNRS, UMR5239, Université Claude Bernard Lyon 1, F-69007 Lyon, France"
+            },
+            "email": "franck.picard@ens-lyon.fr",
+            "familyName": "Picard",
+            "givenName": "Franck"
+        }
+    ],
+    "codeRepository": "https://github.com/franckpicard/pppca",
+    "contributor": [
+        {
+            "id": "https://orcid.org/0000-0001-6461-806X",
+            "type": "Person",
+            "affiliation": {
+                "type": "Organization",
+                "name": "Ceremade, CNRS, UMR 7534, Université Paris-Dauphine, PSL University, Paris, France"
+            },
+            "familyName": "Rivoirard",
+            "givenName": "Vincent"
+        },
+        {
+            "id": "https://www.ceremade.dauphine.fr/~roche/",
+            "type": "Person",
+            "affiliation": {
+                "type": "Organization",
+                "name": "Ceremade, CNRS, UMR 7534, Université Paris-Dauphine, PSL University, Paris, France"
+            },
+            "familyName": "Roche",
+            "givenName": "Angelina"
+        },
+        {
+            "id": "https://people.epfl.ch/victor.panaretos",
+            "type": "Person",
+            "affiliation": {
+                "type": "Organization",
+                "name": "Institute of Mathematics, École Polytechnique Fédérale de Lausanne, Switzerland"
+            },
+            "familyName": "Panaretos",
+            "givenName": "Victor"
+        }
+    ],
+    "dateCreated": "2024-03-27",
+    "dateModified": "2024-05-08",
+    "datePublished": "2024-05-08",
+    "description": "Implementation of the Principal Component Analysis (PCA) framework for point process data.",
+    "downloadUrl": "https://github.com/franckpicard/pppca/tree/v0.0.1",
+    "keywords": [
+        "dimension reduction",
+        "point process"
+    ],
+    "license": "https://spdx.org/licenses/GPL-3.0-or-later",
+    "name": "pppca",
+    "operatingSystem": [
+        "Linux",
+        "MacOS",
+        "Windows"
+    ],
+    "programmingLanguage": "R",
+    "version": "0.0.1",
+    "developmentStatus": "active",
+    "issueTracker": "https://github.com/franckpicard/pppca/issues",
+    "referencePublication": "https://doi.org/10.48550/arXiv.2404.19661"
+}
