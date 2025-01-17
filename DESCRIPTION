@@ -5,7 +5,10 @@ Authors@R: c(
     person("Franck", "Picard", , "franck.picard@ens-lyon.fr", role = "aut",
            comment = c(ORCID = "0000-0001-8084-5481")),
     person("Ghislain", "Durif", , "gd.dev@libertymail.net", role = c("aut", "cre"),
-           comment = c(ORCID = "0000-0003-2567-1401"))
+           comment = c(ORCID = "0000-0003-2567-1401")),
+    person("Vincent", "Rivoirard", role = c("ctb")),
+    person("Angelina", "Roche", role = c("ctb")),
+    person("Victor", "Panaretos", role = c("ctb"))
   )
 Description: Implementation of Principal Component Analysis (PCA) for
     point process data.

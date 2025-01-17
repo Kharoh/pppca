@@ -32,7 +32,16 @@ fusen::fill_description(
             person(
                 "Ghislain", "Durif", email = "gd.dev@libertymail.net", 
                 role = c("aut", "cre"), 
-                comment = c(ORCID = "0000-0003-2567-1401"))
+                comment = c(ORCID = "0000-0003-2567-1401")),
+            person(
+                "Vincent", "Rivoirard", 
+                role = c("ctb")),
+            person(
+                "Angelina", "Roche", 
+                role = c("ctb")),
+            person(
+                "Victor", "Panaretos", 
+                role = c("ctb"))
         ),
         URL = "https://github.com/franckpicard/pppca",
         Version = "0.0.1",
