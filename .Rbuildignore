@@ -1,5 +1,6 @@
 ^dev$
 ^README\.Rmd$
+^README_cache$
 ^pppca\.Rproj$
 ^\.Rproj\.user$
 ^draft$
@@ -8,3 +9,5 @@
 ^Meta$
 ^TODO\.
 ^figs$
+^AUTHORS\.md$
+^codemeta\.json$
