@@ -1,0 +1,66 @@
+[build-system]
+requires = ["hatchling >= 1.26"]
+build-backend = "hatchling.build"
+
+[project]
+name = "pppca"
+dynamic = ["version"]
+description = "Dual-Gram PCA for multivariate point processes"
+readme = "README.md"
+requires-python = ">=3.9"
+license = "Apache-2.0"
+authors = [
+    {name = "Kharoh", email = "gaulu03@gmail.com"}
+]
+keywords = ["point-processes", "pca", "statistics", "functional-data-analysis", "pytorch"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Mathematics",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "License :: OSI Approved :: Apache Software License",
+]
+dependencies = [
+    "numpy>=1.20",
+    "pandas>=1.3",
+    "torch>=2.0",
+    "tqdm>=4.60",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "ruff>=0.1",
+    "mypy>=1.0",
+    "matplotlib>=3.5",  # Useful for running your examples
+]
+
+[project.urls]
+Homepage = "https://github.com/kharoh/pppca"
+Repository = "https://github.com/kharoh/pppca"
+Issues = "https://github.com/kharoh/pppca/issues"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "--cov=pppca --cov-report=term-missing"
+
+[tool.ruff]
+line-length = 88
+select = ["E", "F", "I", "N", "W"]
+target-version = "py39"
+
+[tool.mypy]
+python_version = "3.9"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = true
+ignore_missing_imports = true  # Recommended for pandas/torch which can be tricky with mypy
+
+[tool.hatch.version]
+path = "hatch/__about__.py"
