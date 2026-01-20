@@ -24,7 +24,7 @@ The main function `pppca` expects a list of tensors.
 import torch
 import numpy as np
 import matplotlib.pyplot as plt
-from src.pppca.core import pppca
+from pppca.core import pppca
 
 # 1. Generate synthetic data (e.g., 25 observations in 2D)
 # Each element in 'processes' is a tensor of shape (num_points, 2)

@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "pppca"
 dynamic = ["version"]
-description = "Dual-Gram PCA for multivariate point processes"
+description = "PCA for multivariate point processes"
 readme = "README.md"
 requires-python = ">=3.9"
 license = "Apache-2.0"
@@ -64,3 +64,6 @@ ignore_missing_imports = true  # Recommended for pandas/torch which can be trick
 
 [tool.hatch.version]
 path = "hatch/__about__.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/pppca"]

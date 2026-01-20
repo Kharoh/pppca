@@ -4,10 +4,12 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 
-from src.pppca.core import pppca
+# from src.pppca.core import pppca
+
+from pppca.core import pppca
 
 # Adjust dimension here (d≥1)
-d = 4
+d = 2
 
 def _sample_point_processes(
     num_processes: int = 100,

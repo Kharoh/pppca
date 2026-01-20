@@ -98,7 +98,7 @@ def pppca(
     Jmax: int,
 ) -> Dict[str, object]:
     """
-    Multivariate dual-Gram PCA for point processes on [0,1]^d.
+    PCA for multivariate point processes on [0,1]^d.
 
     Input:
       - point_processes: list length n, each is a tensor of shape (k_i, d) with entries in [0,1]
