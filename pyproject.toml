@@ -48,6 +48,7 @@ docs = [
 Homepage = "https://github.com/kharoh/pppca"
 Repository = "https://github.com/kharoh/pppca"
 Issues = "https://github.com/kharoh/pppca/issues"
+Docs = "https://kharoh.github.io/pppca/"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
