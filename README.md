@@ -62,6 +62,44 @@ plt.title("First Principal Component (Eigenfunction)")
 plt.show()
 ```
 
+## Reuse a trained PPPCA model
+
+When you want to persist a trained PPPCA model (eigenvalues, eigenfunctions, and
+centering statistics), request the state from `pppca`, then save it.
+
+```python
+from pppca.core import pppca, save_pppca_features, load_pppca_features
+
+results = pppca(processes, Jmax=3, return_state=True)
+save_pppca_features("pppca_features.npz", state=results["state"])
+
+# Later (or in another script)
+state = load_pppca_features("pppca_features.npz")
+eigenfun = state["eigenfun"]
+```
+
+## Project new samples onto existing components
+
+For new point processes, project them onto the stored eigenfunctions to obtain
+scores (kernel PCA projection on the centered Gram space).
+
+```python
+from pppca.core import project_pppca
+
+new_scores = project_pppca(new_processes, state=state)
+print(new_scores.head())
+```
+
+## Visualize eigenfunctions (low dimensions)
+
+Use the built-in plot helper for $d \in \{1,2,3\}$ to visualize eigenfunctions.
+
+```python
+from pppca.core import plot_eigenfunctions
+
+plot_eigenfunctions(state["eigenfun"], d=2, Jmax=3)
+```
+
 ## 📄 Reference & Reproducibility
 
 The full research paper describing the methodology is included in this repository:

@@ -39,6 +39,10 @@ dev = [
     "mypy>=1.0",
     "matplotlib>=3.5",  # Useful for running your examples
 ]
+docs = [
+    "sphinx>=7.0",
+    "sphinx-rtd-theme>=1.3",
+]
 
 [project.urls]
 Homepage = "https://github.com/kharoh/pppca"
@@ -48,7 +52,6 @@ Issues = "https://github.com/kharoh/pppca/issues"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
-addopts = "--cov=pppca --cov-report=term-missing"
 
 [tool.ruff]
 line-length = 88

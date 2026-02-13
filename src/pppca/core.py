@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from itertools import chain
-from typing import Dict, List
+from pathlib import Path
+from typing import Callable, Dict, Iterable, List
 
 import numpy as np
 import pandas as pd
@@ -93,9 +94,52 @@ def _center_gram_from_S(S: torch.Tensor) -> torch.Tensor:
     # Symmetrize for numerical stability
     return 0.5 * (K + K.T)
 
+def _make_eigenfunction_evaluator(
+    point_processes: Iterable[PointArray],
+    coeff: np.ndarray | torch.Tensor,
+    eigenval: np.ndarray | torch.Tensor,
+) -> Callable[[np.ndarray | torch.Tensor], np.ndarray]:
+    processes_fp64 = [torch.as_tensor(Pi, dtype=torch.float64) for Pi in point_processes]
+    C = torch.as_tensor(coeff, dtype=torch.float64)
+    eigenval_t = torch.as_tensor(eigenval, dtype=torch.float64)
+    n = C.shape[0]
+    scale = torch.sqrt(float(n) * eigenval_t)
+
+    def eigenfun_eval(X: np.ndarray | torch.Tensor) -> np.ndarray:
+        """
+        Evaluate all eigenfunctions at query locations X.
+
+        Input:
+          - X: (m_eval, d) array/tensor with entries in [0,1]
+        Output:
+          - values: (m_eval, Jmax) numpy array with η_ℓ(X_r) per column ℓ
+        """
+        X_t = torch.as_tensor(X, dtype=torch.float64)           # (m_eval, d)
+        m_eval, _ = X_t.shape
+        Fi_list = []
+        for Pi in processes_fp64:
+            if Pi.numel() == 0:
+                Fi = torch.zeros((m_eval,), dtype=torch.float64)
+            else:
+                comp = (Pi[:, None, :] <= X_t[None, :, :])      # boolean
+                le_all = comp.all(dim=-1)                       # (k_i, m_eval)
+                Fi = le_all.sum(dim=0).to(dtype=torch.float64)  # (m_eval,)
+            Fi_list.append(Fi)
+        F_stack = torch.stack(Fi_list, dim=1)                   # (m_eval, n)
+        Fbar = F_stack.mean(dim=1, keepdim=True)                # (m_eval, 1)
+        FDelta = F_stack - Fbar                                 # (m_eval, n)
+
+        Eta = (FDelta @ C) / scale.unsqueeze(0)                 # (m_eval, Jmax)
+        return Eta.cpu().numpy()
+
+    return eigenfun_eval
+
+
 def pppca(
     point_processes: PointProcessesND,
     Jmax: int,
+    *,
+    return_state: bool = False,
 ) -> Dict[str, object]:
     """
     PCA for multivariate point processes on [0,1]^d.
@@ -154,37 +198,7 @@ def pppca(
     # 6) Provide an evaluator for eigenfunctions on-demand
     #    η_ℓ(x) = (1/sqrt(nλ_ℓ)) Σ_i c_i^{(ℓ)} (F_i(x) - F̄(x)), with
     #    F_i(x) = # { p in P_i : p <= x coordwise }, and F̄(x) = (1/n) Σ_i F_i(x)
-    processes_fp64 = [Pi.to(dtype=torch.float64) for Pi in point_processes]
-    def eigenfun_eval(X: np.ndarray | torch.Tensor) -> np.ndarray:
-        """
-        Evaluate all Jmax eigenfunctions at query locations X.
-
-        Input:
-          - X: (m_eval, d) array/tensor with entries in [0,1]
-        Output:
-          - values: (m_eval, Jmax) numpy array with η_ℓ(X_r) per column ℓ
-        """
-        X_t = torch.as_tensor(X, dtype=torch.float64)           # (m_eval, d)
-        m_eval, d = X_t.shape
-        # Compute F_i(X) for all i: counts of points <= X (coordwise)
-        # Vectorized per i; complexity ~ sum_i k_i * m_eval
-        Fi_list = []
-        for Pi in processes_fp64:
-            if Pi.numel() == 0:
-                Fi = torch.zeros((m_eval,), dtype=torch.float64)
-            else:
-                # Pi: (k_i, d), X_t: (m_eval, d) -> comp: (k_i, m_eval, d)
-                comp = (Pi[:, None, :] <= X_t[None, :, :])      # boolean
-                le_all = comp.all(dim=-1)                       # (k_i, m_eval)
-                Fi = le_all.sum(dim=0).to(dtype=torch.float64)  # (m_eval,)
-            Fi_list.append(Fi)
-        F_stack = torch.stack(Fi_list, dim=1)                   # (m_eval, n)
-        Fbar = F_stack.mean(dim=1, keepdim=True)                # (m_eval, 1)
-        FDelta = F_stack - Fbar                                 # (m_eval, n)
-
-        # η(X): (m_eval, Jmax) = (1/sqrt(nλ)) * FDelta @ C
-        Eta = (FDelta @ C) / scale.unsqueeze(0)                 # (m_eval, Jmax)
-        return Eta.cpu().numpy()
+    eigenfun_eval = _make_eigenfunction_evaluator(point_processes, C, eigenval)
 
     # Prepare outputs
     eigenval_np = eigenval.cpu().numpy()
@@ -194,9 +208,194 @@ def pppca(
     )
     coeff_np = C.cpu().numpy()  # c^{(ℓ)} columns
 
-    return {
+    results: Dict[str, object] = {
         "eigenval": eigenval_np.tolist(),
         "scores": scores_df,
         "coeff": coeff_np,
         "eigenfun": eigenfun_eval,  # call with X (m_eval, d)
     }
+
+    if return_state:
+        row_mean = S.mean(dim=1)
+        grand_mean = S.mean()
+        state = {
+            "eigenval": eigenval_np,
+            "coeff": coeff_np,
+            "row_mean": row_mean.cpu().numpy(),
+            "grand_mean": float(grand_mean.item()),
+            "n": n,
+            "d": point_processes[0].shape[1],
+            "point_processes": [Pi.cpu().numpy() for Pi in point_processes],
+        }
+        results["state"] = state
+
+    return results
+
+
+def save_pppca_features(path: str | Path, *, state: Dict[str, object]) -> Path:
+    """
+    Save a PPPCA state dict to disk for reuse.
+
+    The state should come from pppca(..., return_state=True)["state"].
+    """
+    path = Path(path)
+    point_processes = np.array(state["point_processes"], dtype=object)
+    np.savez_compressed(
+        path,
+        eigenval=np.asarray(state["eigenval"], dtype=float),
+        coeff=np.asarray(state["coeff"], dtype=float),
+        row_mean=np.asarray(state["row_mean"], dtype=float),
+        grand_mean=float(state["grand_mean"]),
+        n=int(state["n"]),
+        d=int(state["d"]),
+        point_processes=point_processes,
+    )
+    return path
+
+
+def load_pppca_features(path: str | Path) -> Dict[str, object]:
+    """
+    Load a PPPCA state dict and rebuild the eigenfunction evaluator.
+    """
+    path = Path(path)
+    data = np.load(path, allow_pickle=True)
+    point_processes = [np.asarray(pp, dtype=float) for pp in data["point_processes"]]
+    state = {
+        "eigenval": np.asarray(data["eigenval"], dtype=float),
+        "coeff": np.asarray(data["coeff"], dtype=float),
+        "row_mean": np.asarray(data["row_mean"], dtype=float),
+        "grand_mean": float(data["grand_mean"]),
+        "n": int(data["n"]),
+        "d": int(data["d"]),
+        "point_processes": point_processes,
+    }
+    state["eigenfun"] = _make_eigenfunction_evaluator(
+        point_processes, state["coeff"], state["eigenval"]
+    )
+    return state
+
+
+def project_pppca(
+    point_processes: PointProcessesND,
+    *,
+    state: Dict[str, object],
+    block_cols: int = 8192,
+    device: torch.device | None = None,
+    work_dtype: torch.dtype = torch.float32,
+) -> pd.DataFrame:
+    """
+    Project new point processes onto an existing PPPCA model.
+
+    Uses kernel PCA projection: score_ℓ = (k_c @ c^{(ℓ)}) / sqrt(n λ_ℓ).
+    """
+    train_processes = [torch.as_tensor(pp, dtype=work_dtype) for pp in state["point_processes"]]
+    C = torch.as_tensor(state["coeff"], dtype=torch.float64)
+    eigenval = torch.as_tensor(state["eigenval"], dtype=torch.float64)
+    row_mean = torch.as_tensor(state["row_mean"], dtype=torch.float64)
+    grand_mean = float(state["grand_mean"])
+    n = int(state["n"])
+
+    scale = torch.sqrt(float(n) * eigenval)  # (Jmax,)
+    scores_list = []
+    for P_new in point_processes:
+        P_new_t = torch.as_tensor(P_new, dtype=work_dtype)
+        s_new = torch.empty((n,), dtype=torch.float64)
+        for i, P_train in enumerate(train_processes):
+            s_new[i] = _pairwise_integral_FiFj_outermin(
+                P_train,
+                P_new_t,
+                block_cols=block_cols,
+                device=device,
+                work_dtype=work_dtype,
+            )
+        mean_s_new = s_new.mean()
+        k_c = s_new - row_mean - mean_s_new + grand_mean
+        scores_list.append((k_c @ C) / scale)
+
+    scores = torch.stack(scores_list, dim=0)
+    return pd.DataFrame(
+        scores.cpu().numpy(),
+        columns=[f"axis{i}" for i in range(1, scores.shape[1] + 1)],
+    )
+
+
+def plot_eigenfunctions(
+    eigenfun: callable,
+    *,
+    d: int,
+    Jmax: int = 3,
+    grid_size: int = 100,
+    cmap: str = "RdBu",
+) -> None:
+    """
+    Visualize eigenfunctions for low-dimensional domains (d=1,2,3).
+    """
+    import matplotlib.pyplot as plt
+
+    if d == 1:
+        grid_lin = np.linspace(0, 1, grid_size).reshape(-1, 1)
+        eta_vals = eigenfun(grid_lin)
+        plt.figure(figsize=(10, 4))
+        for j in range(min(Jmax, eta_vals.shape[1])):
+            plt.plot(grid_lin[:, 0], eta_vals[:, j], label=f"Eigenfunction {j+1}")
+        plt.xlabel("x")
+        plt.ylabel("Eigenfun value")
+        plt.title("Leading Empirical Eigenfunctions (1D)")
+        plt.legend()
+        plt.tight_layout()
+        plt.show()
+        return
+
+    if d == 2:
+        grid_lin = np.linspace(0, 1, grid_size)
+        X, Y = np.meshgrid(grid_lin, grid_lin)
+        X_flat = np.stack([X.ravel(), Y.ravel()], axis=1)
+        eta_vals = eigenfun(X_flat)
+        plt.figure(figsize=(4 * min(Jmax, eta_vals.shape[1]), 4))
+        for j in range(min(Jmax, eta_vals.shape[1])):
+            plt.subplot(1, min(Jmax, eta_vals.shape[1]), j + 1)
+            plt.contourf(
+                X,
+                Y,
+                eta_vals[:, j].reshape(grid_size, grid_size),
+                levels=20,
+                cmap=cmap,
+            )
+            plt.colorbar()
+            plt.title(f"Eigenfunction {j+1}")
+            plt.xlabel("x1")
+            plt.ylabel("x2")
+        plt.suptitle("Leading Empirical Eigenfunctions (2D contour)")
+        plt.tight_layout()
+        plt.show()
+        return
+
+    if d == 3:
+        from mpl_toolkits.mplot3d import Axes3D  # noqa: F401
+
+        grid_lin = np.linspace(0, 1, max(10, grid_size // 3))
+        X, Y, Z = np.meshgrid(grid_lin, grid_lin, grid_lin)
+        XYZ_flat = np.stack([X.ravel(), Y.ravel(), Z.ravel()], axis=1)
+        eta_vals = eigenfun(XYZ_flat)
+        fig = plt.figure(figsize=(8, 6))
+        ax = fig.add_subplot(111, projection="3d")
+        val = eta_vals[:, 0]
+        sel = np.abs(val) > np.percentile(np.abs(val), 95)
+        p = ax.scatter(
+            XYZ_flat[sel, 0],
+            XYZ_flat[sel, 1],
+            XYZ_flat[sel, 2],
+            c=val[sel],
+            cmap=cmap,
+            s=8,
+        )
+        fig.colorbar(p)
+        ax.set_xlabel("x1")
+        ax.set_ylabel("x2")
+        ax.set_zlabel("x3")
+        ax.set_title("Leading Eigenfunction (top values, 3D)")
+        plt.tight_layout()
+        plt.show()
+        return
+
+    raise ValueError("plot_eigenfunctions supports only d=1,2,3")

@@ -26,6 +26,9 @@ wheels/
 htmlcov/
 .tox/
 
+# Docs
+docs/_build/
+
 # IDEs
 .vscode/
 .idea/
